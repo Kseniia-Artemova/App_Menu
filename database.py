@@ -1,11 +1,10 @@
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from config import DB_URL
 
 # создаем описание соединения с БД
-engine = create_engine("postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DB_HOST}/{DATABASE_NAME}",
-                       echo=True
-                       )
+engine = create_engine(DB_URL, echo=True)
 
 # Создание базового класса для всех моделей. Позволяет SQLAlchemy автоматически связывать классы
 # с соответствующими таблицами.
