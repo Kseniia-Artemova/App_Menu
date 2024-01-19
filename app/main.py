@@ -1,8 +1,12 @@
 from fastapi import FastAPI
-from sqlalchemy import create_engine
-from database import SessionLocal
+from app.database import engine, Base
 
-app = FastAPI()
 
-db = SessionLocal()
-engine = create_engine("sqlite+pysqlite:///:memory:", echo=True)
+# Создание всех таблиц в базе данных (вызывается один раз)
+async def create_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+# Инициализация FastAPI приложения
+app = FastAPI(title="App menu")
+
