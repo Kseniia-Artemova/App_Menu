@@ -1,0 +1,21 @@
+# инициализировать механизм миграций
+alembic init migrations
+
+# alembic.ini можно не трогать
+# в env.py:
+sys.path.append(os.path.join(sys.path[0], 'src'))
+target_metadata = Base.metadata
+config.set_main_option("sqlalchemy.url", DB_URL)
+И импортировать все модели, без этого alembic их не видит
+
+# создать миграцию
+alembic revision --autogenerate -m "migration name"
+
+# провести миграцию
+alembic upgrade head
+
+# откатить миграцию
+alembic downgrade -1
+
+# Запуск приложения
+uvicorn app.main:app --reload
