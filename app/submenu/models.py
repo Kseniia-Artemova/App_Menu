@@ -1,18 +1,18 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+import uuid
+from sqlalchemy import Column, Integer, String, ForeignKey, UUID
 from sqlalchemy.orm import relationship
-
+import uuid
 from app.database import Base
 
 
 class Submenu(Base):
-    __tablename__ = 'submenus'  # Имя таблицы в базе данных
+    __tablename__ = 'submenus'
 
-    id = Column(Integer, primary_key=True, index=True)  # Уникальный идентификатор подменю
-    title = Column(String, index=True)  # Название подменю
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    title = Column(String, index=True)
     description = Column(String)
 
-    # Пример связи: предположим, что у каждого блюда есть категория
-    menu_id = Column(Integer, ForeignKey('menus.id'))  # Внешний ключ на таблицу категорий
-    menu = relationship("Menu", back_populates="submenus")  # Определяем отношение с моделью категории
+    menu_id = Column(UUID, ForeignKey('menus.id'))
+    menu = relationship("Menu", back_populates="submenus")
 
     dishes = relationship("Dish", back_populates="submenu", cascade="all, delete-orphan")

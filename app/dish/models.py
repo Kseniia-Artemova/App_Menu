@@ -1,17 +1,16 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, UUID
 from sqlalchemy.orm import relationship
-
+import uuid
 from app.database import Base
 
 
 class Dish(Base):
-    __tablename__ = 'dishes'  # Имя таблицы в базе данных
+    __tablename__ = 'dishes'
 
-    id = Column(Integer, primary_key=True, index=True)  # Уникальный идентификатор блюда
-    title = Column(String, index=True)  # Название блюда
-    description = Column(String)  # Описание блюда
-    price = Column(Numeric(10, 2))  # Цена блюда
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    title = Column(String, index=True)
+    description = Column(String)
+    price = Column(String)
 
-    # Пример связи: предположим, что у каждого блюда есть категория
-    submenu_id = Column(Integer, ForeignKey('submenus.id'))  # Внешний ключ на таблицу категорий
-    submenu = relationship("Submenu", back_populates="dishes")  # Определяем отношение с моделью категории
+    submenu_id = Column(UUID, ForeignKey('submenus.id'))
+    submenu = relationship("Submenu", back_populates="dishes")
