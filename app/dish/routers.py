@@ -1,21 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
+from sqlalchemy import update, delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.dish.models import Dish
-from app.dish.schemas import DishCreate
+from app.dish.schemas import DishPydantic
 from app.services import get_submenu_or_404, get_menu_or_404, get_dish_or_404
-from app.submenu.models import Submenu
 
 router_dish = APIRouter()
 
 
 @router_dish.post("/menus/{menu_id}/submenus/{submenu_id}/dishes",
-                  response_model=DishCreate, tags=["dishes"], status_code=201)
+                  response_model=DishPydantic, tags=["dishes"], status_code=201)
 async def create_dish_for_submenu(menu_id: str,
                                   submenu_id: str,
-                                  dish: DishCreate,
-                                  db: Session = Depends(get_async_session)):
+                                  dish: DishPydantic,
+                                  db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)
 
@@ -27,21 +27,23 @@ async def create_dish_for_submenu(menu_id: str,
 
 
 @router_dish.get("/menus/{menu_id}/submenus/{submenu_id}/dishes",
-                 response_model=list[DishCreate], tags=["dishes"])
+                 response_model=list[DishPydantic], tags=["dishes"])
 async def read_dishes_for_submenu(menu_id: str,
                                   submenu_id: str,
-                                  db: Session = Depends(get_async_session)):
+                                  db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)
-    return db.query(Dish).filter(Dish.submenu_id == submenu_id).all()
+    result = await db.execute(select(Dish).filter(Dish.submenu_id == submenu_id))
+    dishes = result.scalars().all()
+    return dishes
 
 
 @router_dish.get("/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-                 response_model=DishCreate, tags=["dishes"])
+                 response_model=DishPydantic, tags=["dishes"])
 async def read_dish_for_submenu(menu_id: str,
                                 submenu_id: str,
                                 dish_id: str,
-                                db: Session = Depends(get_async_session)):
+                                db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)
     dish = await get_dish_or_404(db, dish_id)
@@ -49,11 +51,11 @@ async def read_dish_for_submenu(menu_id: str,
 
 
 @router_dish.delete("/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-                    tags=["dishes"])
+                    tags=["dishes"], status_code=204)
 async def delete_dish_for_submenu(menu_id: str,
                                   submenu_id: str,
                                   dish_id: str,
-                                  db: Session = Depends(get_async_session)):
+                                  db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)
     dish = await get_dish_or_404(db, dish_id)
@@ -63,18 +65,17 @@ async def delete_dish_for_submenu(menu_id: str,
 
 
 @router_dish.patch("/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-                   response_model=DishCreate, tags=["dishes"])
+                   response_model=DishPydantic, tags=["dishes"])
 async def update_dish_for_submenu(menu_id: str,
                                   submenu_id: str,
                                   dish_id: str,
-                                  dish: DishCreate,
-                                  db: Session = Depends(get_async_session)):
+                                  dish: DishPydantic,
+                                  db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)
     db_dish = await get_dish_or_404(db, dish_id)
     db_dish.title = dish.title
     db_dish.description = dish.description
-    db_dish.price = dish.price
     await db.commit()
     await db.refresh(db_dish)
     return db_dish

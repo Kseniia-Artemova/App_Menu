@@ -1,29 +1,87 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+import asyncio
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
+from app.dish.models import Dish
 from app.menu.models import Menu
-from app.menu.schemas import MenuCreate
+from app.menu.schemas import MenuCreatePydantic, MenuReadPydantic
 from app.services import get_menu_or_404
+from app.submenu.models import Submenu
 
 router_menu = APIRouter()
 
 
-@router_menu.get("/menus", tags=["menus"], response_model=list[MenuCreate])
-async def read_menus(db: Session = Depends(get_async_session)):
+@router_menu.get("/menus", tags=["menus"], response_model=list[MenuReadPydantic])
+async def read_menus(db: AsyncSession = Depends(get_async_session)):
     result = await db.execute(select(Menu))
     menus = result.scalars().all()
-    return menus
+
+    async def get_submenu_info_for_menu(menu):
+        submenus_result = await db.execute(
+            select(Submenu.id, Submenu.title)
+            .where(Submenu.menu_id == menu.id)
+        )
+        submenus = submenus_result.all()
+
+        submenus_with_dish_count = []
+        for submenu_id, title in submenus:
+            dish_count_result = await db.execute(
+                select(func.count(Dish.id))
+                .where(Dish.submenu_id == submenu_id)
+            )
+            dish_count = dish_count_result.scalar_one()
+
+            submenus_with_dish_count.append({
+                "title": title,
+                "dish_count": dish_count
+            })
+
+        return MenuReadPydantic(
+            title=menu.title,
+            description=menu.description,
+            submenus_count=len(submenus),
+            submenus=submenus_with_dish_count
+        )
+
+    menus_info = await asyncio.gather(*[get_submenu_info_for_menu(menu) for menu in menus])
+    return menus_info
 
 
-@router_menu.get("/menus/{menu_id}", tags=["menus"], response_model=MenuCreate)
-async def read_menu(menu_id: str, db: Session = Depends(get_async_session)):
-    return await get_menu_or_404(db, menu_id)
+@router_menu.get("/menus/{menu_id}", tags=["menus"], response_model=MenuReadPydantic)
+async def read_menu(menu_id: str, db: AsyncSession = Depends(get_async_session)):
+    menu = await get_menu_or_404(db, menu_id)
+
+    submenus_result = await db.execute(
+        select(Submenu.id, Submenu.title)
+        .where(Submenu.menu_id == menu_id)
+    )
+    submenus = submenus_result.all()
+
+    submenus_with_dish_count = []
+    for submenu_id, title in submenus:
+        dish_count_result = await db.execute(
+            select(func.count(Dish.id))
+            .where(Dish.submenu_id == submenu_id)
+        )
+        dish_count = dish_count_result.scalar_one()
+
+        submenus_with_dish_count.append({
+            "title": title,
+            "dish_count": dish_count
+        })
+
+    return MenuReadPydantic(
+        title=menu.title,
+        description=menu.description,
+        submenus_count=len(submenus),
+        submenus=submenus_with_dish_count)
 
 
-@router_menu.post("/menus", tags=["menus"], response_model=MenuCreate, status_code=201)
-async def create_menu(menu: MenuCreate, db: Session = Depends(get_async_session)):
+@router_menu.post("/menus", tags=["menus"], response_model=MenuCreatePydantic, status_code=201)
+async def create_menu(menu: MenuCreatePydantic, db: AsyncSession = Depends(get_async_session)):
     db_menu = Menu(**menu.model_dump())
     db.add(db_menu)
     await db.commit()
@@ -31,8 +89,8 @@ async def create_menu(menu: MenuCreate, db: Session = Depends(get_async_session)
     return db_menu
 
 
-@router_menu.patch("/menus/{menu_id}", tags=["menus"], response_model=MenuCreate)
-async def update_menu(menu_id: str, menu: MenuCreate, db: Session = Depends(get_async_session)):
+@router_menu.patch("/menus/{menu_id}", tags=["menus"], response_model=MenuCreatePydantic)
+async def update_menu(menu_id: str, menu: MenuCreatePydantic, db: AsyncSession = Depends(get_async_session)):
     db_menu = await get_menu_or_404(db, menu_id)
     db_menu.title = menu.title
     db_menu.description = menu.description
@@ -42,7 +100,7 @@ async def update_menu(menu_id: str, menu: MenuCreate, db: Session = Depends(get_
 
 
 @router_menu.delete("/menus/{menu_id}", tags=["menus"])
-async def delete_menu(menu_id: str, db: Session = Depends(get_async_session)):
+async def delete_menu(menu_id: str, db: AsyncSession = Depends(get_async_session)):
     db_menu = await get_menu_or_404(db, menu_id)
     await db.delete(db_menu)
     await db.commit()

@@ -3,7 +3,7 @@ from pydantic import BaseModel, model_validator, constr, Field
 import re
 
 
-class DishCreate(BaseModel):
+class DishPydantic(BaseModel):
     title: str
     description: Optional[str] = None
     price: str = Field(pattern=r'^\d+\.\d{2}$')
