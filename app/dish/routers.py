@@ -31,8 +31,6 @@ async def create_dish_for_submenu(menu_id: str,
 async def read_dishes_for_submenu(menu_id: str,
                                   submenu_id: str,
                                   db: AsyncSession = Depends(get_async_session)):
-    await get_menu_or_404(db, menu_id)
-    await get_submenu_or_404(db, submenu_id)
     result = await db.execute(select(Dish).filter(Dish.submenu_id == submenu_id))
     dishes = result.scalars().all()
     return dishes
@@ -76,6 +74,7 @@ async def update_dish_for_submenu(menu_id: str,
     db_dish = await get_dish_or_404(db, dish_id)
     db_dish.title = dish.title
     db_dish.description = dish.description
+    db_dish.price = dish.price
     await db.commit()
     await db.refresh(db_dish)
     return db_dish

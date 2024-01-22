@@ -17,7 +17,7 @@ class MenuCreatePydantic(BaseModel):
 
 class MenuReadPydantic(MenuCreatePydantic):
     submenus_count: int
-    submenus: Optional[list[SubmenuReadPydantic]] = None
+    dishes_count: int
 
     class Config:
         from_attributes = True

@@ -16,38 +16,32 @@ router_menu = APIRouter()
 
 @router_menu.get("/menus", tags=["menus"], response_model=list[MenuReadPydantic])
 async def read_menus(db: AsyncSession = Depends(get_async_session)):
-    result = await db.execute(select(Menu))
-    menus = result.scalars().all()
+    menus_result = await db.execute(select(Menu))
+    menus = menus_result.scalars().all()
 
-    async def get_submenu_info_for_menu(menu):
-        submenus_result = await db.execute(
-            select(Submenu.id, Submenu.title)
+    async def get_menu_info(menu):
+        submenus_count_result = await db.execute(
+            select(func.count(Submenu.id))
             .where(Submenu.menu_id == menu.id)
         )
-        submenus = submenus_result.all()
+        submenus_count = submenus_count_result.scalar_one()
 
-        submenus_with_dish_count = []
-        for submenu_id, title in submenus:
-            dish_count_result = await db.execute(
-                select(func.count(Dish.id))
-                .where(Dish.submenu_id == submenu_id)
-            )
-            dishes_count = dish_count_result.scalar_one()
-
-            submenus_with_dish_count.append({
-                "title": title,
-                "dishes_count": dishes_count
-            })
+        total_dishes_count_result = await db.execute(
+            select(func.count(Dish.id))
+            .join(Submenu, Submenu.id == Dish.submenu_id)
+            .where(Submenu.menu_id == menu.id)
+        )
+        total_dishes_count = total_dishes_count_result.scalar_one()
 
         return MenuReadPydantic(
             id=menu.id,
             title=menu.title,
             description=menu.description,
-            submenus_count=len(submenus),
-            submenus=submenus_with_dish_count
+            submenus_count=submenus_count,
+            dishes_count=total_dishes_count
         )
 
-    menus_info = await asyncio.gather(*[get_submenu_info_for_menu(menu) for menu in menus])
+    menus_info = await asyncio.gather(*[get_menu_info(menu) for menu in menus])
     return menus_info
 
 
@@ -55,31 +49,28 @@ async def read_menus(db: AsyncSession = Depends(get_async_session)):
 async def read_menu(menu_id: str, db: AsyncSession = Depends(get_async_session)):
     menu = await get_menu_or_404(db, menu_id)
 
-    submenus_result = await db.execute(
-        select(Submenu.id, Submenu.title)
+    submenus_count_result = await db.execute(
+        select(func.count(Submenu.id))
         .where(Submenu.menu_id == menu_id)
     )
-    submenus = submenus_result.all()
+    submenus_count = submenus_count_result.scalar_one()
 
-    submenus_with_dish_count = []
-    for submenu_id, title in submenus:
-        dish_count_result = await db.execute(
-            select(func.count(Dish.id))
-            .where(Dish.submenu_id == submenu_id)
-        )
-        dishes_count = dish_count_result.scalar_one()
+    # Подсчет общего количества блюд во всех подменю данного меню
+    total_dishes_count_result = await db.execute(
+        select(func.count(Dish.id))
+        .join(Submenu, Submenu.id == Dish.submenu_id)
+        .where(Submenu.menu_id == menu_id)
+    )
+    total_dishes_count = total_dishes_count_result.scalar_one()
 
-        submenus_with_dish_count.append({
-            "title": title,
-            "dishes_count": dishes_count
-        })
-
+    # Возвращаем информацию о меню с подсчитанным количеством подменю и блюд
     return MenuReadPydantic(
         id=menu.id,
         title=menu.title,
         description=menu.description,
-        submenus_count=len(submenus),
-        submenus=submenus_with_dish_count)
+        submenus_count=submenus_count,
+        dishes_count=total_dishes_count
+    )
 
 
 @router_menu.post("/menus", tags=["menus"], response_model=MenuCreatePydantic, status_code=201)
