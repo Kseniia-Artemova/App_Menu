@@ -15,7 +15,7 @@ router_submenu = APIRouter()
 async def read_submenus_for_menu(menu_id: str, db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     result = await db.execute(
-        select(Submenu, func.count(Dish.id).label("dish_count"))
+        select(Submenu, func.count(Dish.id).label("dishes_count"))
         .join(Dish, isouter=True)
         .group_by(Submenu.id)
         .filter(Submenu.menu_id == menu_id)
@@ -23,10 +23,11 @@ async def read_submenus_for_menu(menu_id: str, db: AsyncSession = Depends(get_as
     submenus_with_counts = result.all()
     return [
         SubmenuReadPydantic(
+            id=submenu.id,
             title=submenu.title,
             description=submenu.description,
-            dish_count=dish_count
-        ) for submenu, dish_count in submenus_with_counts
+            dishes_count=dishes_count
+        ) for submenu, dishes_count in submenus_with_counts
     ]
 
 
@@ -50,7 +51,7 @@ async def read_submenu_for_menu(menu_id: str,
                                 db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     result = await db.execute(
-        select(Submenu, func.count(Dish.id).label("dish_count"))
+        select(Submenu, func.count(Dish.id).label("dishes_count"))
         .join(Dish, isouter=True)
         .group_by(Submenu.id)
         .filter(Submenu.id == submenu_id)
@@ -60,11 +61,12 @@ async def read_submenu_for_menu(menu_id: str,
     if not submenu_with_count:
         raise HTTPException(status_code=404, detail="submenu not found")
 
-    submenu, dish_count = submenu_with_count
+    submenu, dishes_count = submenu_with_count
     return SubmenuReadPydantic(
+        id=submenu.id,
         title=submenu.title,
         description=submenu.description,
-        dish_count=dish_count
+        dishes_count=dishes_count
     )
 
 
@@ -84,7 +86,7 @@ async def update_submenu_for_menu(menu_id: str,
 
 
 @router_submenu.delete("/menus/{menu_id}/submenus/{submenu_id}",
-                       tags=["submenus"], status_code=204)
+                       tags=["submenus"], status_code=200)
 async def delete_submenu_for_menu(menu_id: str,
                                   submenu_id: str,
                                   db: AsyncSession = Depends(get_async_session)):

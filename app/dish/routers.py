@@ -1,20 +1,20 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import update, delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.dish.models import Dish
-from app.dish.schemas import DishPydantic
+from app.dish.schemas import DishCreatePydantic, DishReadPydantic
 from app.services import get_submenu_or_404, get_menu_or_404, get_dish_or_404
 
 router_dish = APIRouter()
 
 
 @router_dish.post("/menus/{menu_id}/submenus/{submenu_id}/dishes",
-                  response_model=DishPydantic, tags=["dishes"], status_code=201)
+                  response_model=DishCreatePydantic, tags=["dishes"], status_code=201)
 async def create_dish_for_submenu(menu_id: str,
                                   submenu_id: str,
-                                  dish: DishPydantic,
+                                  dish: DishCreatePydantic,
                                   db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)
@@ -27,7 +27,7 @@ async def create_dish_for_submenu(menu_id: str,
 
 
 @router_dish.get("/menus/{menu_id}/submenus/{submenu_id}/dishes",
-                 response_model=list[DishPydantic], tags=["dishes"])
+                 response_model=list[DishReadPydantic], tags=["dishes"])
 async def read_dishes_for_submenu(menu_id: str,
                                   submenu_id: str,
                                   db: AsyncSession = Depends(get_async_session)):
@@ -39,7 +39,7 @@ async def read_dishes_for_submenu(menu_id: str,
 
 
 @router_dish.get("/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-                 response_model=DishPydantic, tags=["dishes"])
+                 response_model=DishReadPydantic, tags=["dishes"])
 async def read_dish_for_submenu(menu_id: str,
                                 submenu_id: str,
                                 dish_id: str,
@@ -51,7 +51,7 @@ async def read_dish_for_submenu(menu_id: str,
 
 
 @router_dish.delete("/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-                    tags=["dishes"], status_code=204)
+                    tags=["dishes"], status_code=200)
 async def delete_dish_for_submenu(menu_id: str,
                                   submenu_id: str,
                                   dish_id: str,
@@ -65,11 +65,11 @@ async def delete_dish_for_submenu(menu_id: str,
 
 
 @router_dish.patch("/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-                   response_model=DishPydantic, tags=["dishes"])
+                   response_model=DishCreatePydantic, tags=["dishes"])
 async def update_dish_for_submenu(menu_id: str,
                                   submenu_id: str,
                                   dish_id: str,
-                                  dish: DishPydantic,
+                                  dish: DishCreatePydantic,
                                   db: AsyncSession = Depends(get_async_session)):
     await get_menu_or_404(db, menu_id)
     await get_submenu_or_404(db, submenu_id)

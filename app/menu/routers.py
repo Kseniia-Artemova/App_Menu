@@ -32,14 +32,15 @@ async def read_menus(db: AsyncSession = Depends(get_async_session)):
                 select(func.count(Dish.id))
                 .where(Dish.submenu_id == submenu_id)
             )
-            dish_count = dish_count_result.scalar_one()
+            dishes_count = dish_count_result.scalar_one()
 
             submenus_with_dish_count.append({
                 "title": title,
-                "dish_count": dish_count
+                "dishes_count": dishes_count
             })
 
         return MenuReadPydantic(
+            id=menu.id,
             title=menu.title,
             description=menu.description,
             submenus_count=len(submenus),
@@ -66,14 +67,15 @@ async def read_menu(menu_id: str, db: AsyncSession = Depends(get_async_session))
             select(func.count(Dish.id))
             .where(Dish.submenu_id == submenu_id)
         )
-        dish_count = dish_count_result.scalar_one()
+        dishes_count = dish_count_result.scalar_one()
 
         submenus_with_dish_count.append({
             "title": title,
-            "dish_count": dish_count
+            "dishes_count": dishes_count
         })
 
     return MenuReadPydantic(
+        id=menu.id,
         title=menu.title,
         description=menu.description,
         submenus_count=len(submenus),

@@ -1,9 +1,10 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 
 
 class SubmenuCreatePydantic(BaseModel):
+    id: Optional[UUID4] = None
     title: str
     description: Optional[str] = None
 
@@ -12,7 +13,7 @@ class SubmenuCreatePydantic(BaseModel):
 
 
 class SubmenuReadPydantic(SubmenuCreatePydantic):
-    dish_count: int
+    dishes_count: int
 
     class Config:
         from_attributes = True
