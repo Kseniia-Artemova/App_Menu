@@ -5,8 +5,8 @@ from app.menu.routers import router_menu
 from app.submenu.routers import router_submenu
 
 
-# Создание всех таблиц в базе данных (вызывается один раз)
 async def create_tables():
+    """Создание всех таблиц в базе данных (вызывается один раз)"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

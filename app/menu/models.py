@@ -5,6 +5,8 @@ from app.database import Base
 
 
 class Menu(Base):
+    """Модель меню"""
+
     __tablename__ = 'menus'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)

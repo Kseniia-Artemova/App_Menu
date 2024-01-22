@@ -1,9 +1,13 @@
 from typing import Optional
-from pydantic import BaseModel, model_validator, Field, UUID4, field_validator
+from pydantic import BaseModel, Field, UUID4, field_validator
 
 
 class DishCreatePydantic(BaseModel):
-    id: Optional[UUID4] = None
+    """
+    Модель Pydantic для создания блюда
+
+    Проверяет цену на корректность и округляет значение до 2 знаков поле запятой
+    """
     title: str
     description: Optional[str] = None
     price: str = Field(pattern=r'^\d+\.\d{2}$')
@@ -22,6 +26,11 @@ class DishCreatePydantic(BaseModel):
 
 
 class DishReadPydantic(DishCreatePydantic):
+    """
+    Модель Pydantic для вывода блюда.
+    Содержит все поля, характерные для создания и добавляет вывод id
+    """
+    id: Optional[UUID4] = None
 
     class Config:
         from_attributes = True
