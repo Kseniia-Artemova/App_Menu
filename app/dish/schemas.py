@@ -1,12 +1,12 @@
 from typing import Optional
-
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator, constr, Field
+import re
 
 
 class DishCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    price: float
+    price: str = Field(pattern=r'^\d+\.\d{2}$')
 
     class Config:
-        orm_mode = True
+        from_attributes = True
