@@ -13,6 +13,8 @@ router_submenu = APIRouter()
 
 @router_submenu.get("/menus/{menu_id}/submenus", response_model=list[SubmenuReadPydantic], tags=["submenus"])
 async def read_submenus_for_menu(menu_id: str, db: AsyncSession = Depends(get_async_session)):
+    """Эндпойнт для получения списка подменю для конкретного меню"""
+
     await get_menu_or_404(db, menu_id)
     result = await db.execute(
         select(Submenu, func.count(Dish.id).label("dishes_count"))
@@ -32,10 +34,12 @@ async def read_submenus_for_menu(menu_id: str, db: AsyncSession = Depends(get_as
 
 
 @router_submenu.post("/menus/{menu_id}/submenus",
-                     response_model=SubmenuCreatePydantic, tags=["submenus"], status_code=201)
+                     response_model=SubmenuReadPydantic, tags=["submenus"], status_code=201)
 async def create_submenu_for_menu(menu_id: str,
                                   submenu: SubmenuCreatePydantic,
                                   db: AsyncSession = Depends(get_async_session)):
+    """Эндпойнт для создания подменю"""
+
     await get_menu_or_404(db, menu_id)
     db_submenu = Submenu(**submenu.model_dump(), menu_id=menu_id)
     db.add(db_submenu)
@@ -49,6 +53,8 @@ async def create_submenu_for_menu(menu_id: str,
 async def read_submenu_for_menu(menu_id: str,
                                 submenu_id: str,
                                 db: AsyncSession = Depends(get_async_session)):
+    """Эндпойнт для вывода конкретного подменю"""
+
     await get_menu_or_404(db, menu_id)
     result = await db.execute(
         select(Submenu, func.count(Dish.id).label("dishes_count"))
@@ -71,11 +77,13 @@ async def read_submenu_for_menu(menu_id: str,
 
 
 @router_submenu.patch("/menus/{menu_id}/submenus/{submenu_id}",
-                      response_model=SubmenuCreatePydantic, tags=["submenus"])
+                      response_model=SubmenuReadPydantic, tags=["submenus"])
 async def update_submenu_for_menu(menu_id: str,
                                   submenu_id: str,
                                   submenu: SubmenuCreatePydantic,
                                   db: AsyncSession = Depends(get_async_session)):
+    """Эндпойнт для обновления информации о конкретном подменю"""
+
     await get_menu_or_404(db, menu_id)
     db_submenu = await get_submenu_or_404(db, submenu_id)
     db_submenu.title = submenu.title
@@ -90,6 +98,8 @@ async def update_submenu_for_menu(menu_id: str,
 async def delete_submenu_for_menu(menu_id: str,
                                   submenu_id: str,
                                   db: AsyncSession = Depends(get_async_session)):
+    """Эндпойнт для удаления подменю"""
+
     await get_menu_or_404(db, menu_id)
     db_submenu = await get_submenu_or_404(db, submenu_id)
     await db.delete(db_submenu)

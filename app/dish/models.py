@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, UUID
+from sqlalchemy import Column, String, ForeignKey, UUID
 from sqlalchemy.orm import relationship
 import uuid
 from app.database import Base
 
 
 class Dish(Base):
+    """Модель блюда"""
+
     __tablename__ = 'dishes'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)

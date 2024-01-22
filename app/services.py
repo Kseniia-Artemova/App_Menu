@@ -7,6 +7,7 @@ from app.submenu.models import Submenu
 
 
 async def get_menu_or_404(db: AsyncSession, menu_id: str) -> Menu:
+    """Проверка на существование меню"""
     menu = await db.get(Menu, menu_id)
     if not menu:
         raise HTTPException(status_code=404, detail="menu not found")
@@ -14,6 +15,7 @@ async def get_menu_or_404(db: AsyncSession, menu_id: str) -> Menu:
 
 
 async def get_submenu_or_404(db: AsyncSession, submenu_id: str) -> Submenu:
+    """Проверка на существование подменю"""
     submenu = await db.get(Submenu, submenu_id)
     if not submenu:
         raise HTTPException(status_code=404, detail="submenu not found")
@@ -21,6 +23,7 @@ async def get_submenu_or_404(db: AsyncSession, submenu_id: str) -> Submenu:
 
 
 async def get_dish_or_404(db: AsyncSession, dish_id: str) -> Dish:
+    """Проверка на существование блюда"""
     dish = await db.get(Dish, dish_id)
     if not dish:
         raise HTTPException(status_code=404, detail="dish not found")
